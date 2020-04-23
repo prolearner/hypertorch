@@ -16,7 +16,8 @@ given an outer objective
 <img src="https://latex.codecogs.com/gif.latex?\large&space;E(w,&space;\lambda)" title="\large E(w, \lambda)" />
 a fixed point mapping 
 <img src="https://latex.codecogs.com/gif.latex?\large&space;\Phi(w,\lambda)" title="\large \Phi(w,\lambda)" />
-which for most methods has to be a contraction and an approximate solution to the fixed point equation <a href="https://www.codecogs.com/eqnedit.php?latex=\large&space;w(\lambda)&space;=&space;\Phi(w(\lambda),&space;\lambda)." target="_blank"><img src="https://latex.codecogs.com/gif.latex?\large&space;w(\lambda)&space;=&space;\Phi(w(\lambda),&space;\lambda)." title="\large w(\lambda) = \Phi(w(\lambda), \lambda)." /></a>
+which for most methods has to be a contraction and an approximate solution to the fixed point equation 
+<img src="https://latex.codecogs.com/gif.latex?\large&space;w(\lambda)&space;=&space;\Phi(w(\lambda),&space;\lambda)." title="\large w(\lambda) = \Phi(w(\lambda), \lambda)." />
 
 The parameter `K` controls the number of iteration of the  hypergradient approximation algorithms.
 Higher `K` correspond to higher accuracy and higher computation time (scales linearly with `K`)
