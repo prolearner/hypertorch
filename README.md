@@ -15,9 +15,9 @@ We call **hypegradient** the following quantity.
 given an outer objective
 <img src="https://latex.codecogs.com/gif.latex?E(w,&space;\lambda)" title="E(w, \lambda)" />
 a fixed point mapping 
-<img src="https://latex.codecogs.com/gif.latex?\large&space;\Phi(w,\lambda)" title="\large \Phi(w,\lambda)" />
+<img src="https://latex.codecogs.com/gif.latex?\Phi(w,\lambda)" title="\Phi(w,\lambda)" />
 which for most methods has to be a contraction and an approximate solution to the fixed point equation 
-<img src="https://latex.codecogs.com/gif.latex?\large&space;w(\lambda)&space;=&space;\Phi(w(\lambda),&space;\lambda)." title="\large w(\lambda) = \Phi(w(\lambda), \lambda)." />
+<img src="https://latex.codecogs.com/gif.latex?w(\lambda)&space;=&space;\Phi(w(\lambda),&space;\lambda)." title="w(\lambda) = \Phi(w(\lambda), \lambda)." />
 
 The parameter `K` controls the number of iteration of the  hypergradient approximation algorithms.
 Higher `K` correspond to higher accuracy and higher computation time (scales linearly with `K`)
