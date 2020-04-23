@@ -13,7 +13,7 @@ We call **hypegradient** the following quantity.
 
 `hg/hypergradients` contains functions to compute an approximation to the hypergradient
 given an outer objective
-<img src="https://latex.codecogs.com/gif.latex?\large&space;E(w,&space;\lambda)" title="\large E(w, \lambda)" />
+<img src="https://latex.codecogs.com/gif.latex?E(w,&space;\lambda)" title="E(w, \lambda)" />
 a fixed point mapping 
 <img src="https://latex.codecogs.com/gif.latex?\large&space;\Phi(w,\lambda)" title="\large \Phi(w,\lambda)" />
 which for most methods has to be a contraction and an approximate solution to the fixed point equation 
