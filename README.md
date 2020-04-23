@@ -5,7 +5,7 @@ Lightweight package to compute approximate hypergradients in PyTorch.
 ## Hypergradient
 Given the following bi-level problem.
 
-<a href="https://www.codecogs.com/eqnedit.php?latex=\dpi{110}&space;\large&space;f(\lambda)&space;=&space;E(w(\lambda),&space;\lambda),&space;\quad&space;w(\lambda)&space;=&space;\Phi(w(\lambda),&space;\lambda)." target="_blank"><img src="https://latex.codecogs.com/gif.latex?\dpi{110}&space;\large&space;f(\lambda)&space;=&space;E(w(\lambda),&space;\lambda),&space;\quad&space;w(\lambda)&space;=&space;\Phi(w(\lambda),&space;\lambda)." title="\large f(\lambda) = E(w(\lambda), \lambda), \quad w(\lambda) = \Phi(w(\lambda), \lambda)." /></a>
+<a href="https://www.codecogs.com/eqnedit.php?latex=\large&space;f(\lambda)&space;=&space;E(w(\lambda),&space;\lambda),&space;\quad&space;w(\lambda)&space;=&space;\Phi(w(\lambda),&space;\lambda)." target="_blank"><img src="https://latex.codecogs.com/gif.latex?\large&space;f(\lambda)&space;=&space;E(w(\lambda),&space;\lambda),&space;\quad&space;w(\lambda)&space;=&space;\Phi(w(\lambda),&space;\lambda)." title="\large f(\lambda) = E(w(\lambda), \lambda), \quad w(\lambda) = \Phi(w(\lambda), \lambda)." /></a>
 
 We call **hypegradient** the following quantity.
 
@@ -13,7 +13,7 @@ We call **hypegradient** the following quantity.
 
 `hg/hypergradients` contains functions to compute an approximation to the hypergradient
 given an outer objective
-<a href="https://www.codecogs.com/eqnedit.php?latex=\large&space;E(w,&space;\lambda)" target="_blank"><img src="https://latex.codecogs.com/gif.latex?\large&space;E(w,&space;\lambda)" title="\large E(w, \lambda)" /></a>
+<a href="https://www.codecogs.com/eqnedit.php?latex=\large&space;\Phi(w,&space;\lambda)" target="_blank"><img src="https://latex.codecogs.com/gif.latex?\large&space;\Phi(w,&space;\lambda)" title="\large \Phi(w, \lambda)" /></a>
 a fixed point mapping 
 <a href="https://www.codecogs.com/eqnedit.php?latex=\large&space;\Phi(w,&space;\lambda)" target="_blank"><img src="https://latex.codecogs.com/gif.latex?\large&space;\Phi(w,&space;\lambda)" title="\large \Phi(w, \lambda)" /></a>
 which for most methods has to be a contraction and an approximate solution to the fixed point equation <a href="https://www.codecogs.com/eqnedit.php?latex=\large&space;w(\lambda)&space;=&space;\Phi(w(\lambda),&space;\lambda)." target="_blank"><img src="https://latex.codecogs.com/gif.latex?\large&space;w(\lambda)&space;=&space;\Phi(w(\lambda),&space;\lambda)." title="\large w(\lambda) = \Phi(w(\lambda), \lambda)." /></a>
