@@ -164,16 +164,6 @@ def get_outer_gradients(outer_loss, params, hparams, retain_graph=True):
     return grad_outer_w, grad_outer_hparams
 
 
-def get_grad_func_fixed_args(grad_f, fixed_k=None, fixed_fp_map=None):
-    # noinspection PyUnusedLocal
-    def grad_func_fixed_args(w, hparams, K, fp_map, outer_loss, set_grad=True):
-        K = K if fixed_k is None else fixed_k
-        fp_map = fp_map if fixed_fp_map is None else fixed_fp_map
-        return grad_f(w, hparams, K, fp_map, outer_loss, set_grad=True)
-
-    return grad_func_fixed_args
-
-
 def cat_list_to_tensor(list_tx):
     return torch.cat([xx.view([-1]) for xx in list_tx])
 
