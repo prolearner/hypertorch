@@ -35,21 +35,32 @@ def reverse(params_history, hparams, K, fp_map_history, outer_loss, tol=1e-10, s
     return grads
 
 
-def fixed_point(params, hparams, K, fp_map, outer_loss, tol=1e-10, set_grad=True):
+def fixed_point(params, hparams, K, fp_map, outer_loss, tol=1e-10, set_grad=True, stochastic=False):
     params = [w.detach().requires_grad_(True) for w in params]
     o_loss = outer_loss(params, hparams)
     grad_outer_w, grad_outer_hparams = get_outer_gradients(o_loss, params, hparams)
 
-    w_mapped = fp_map(params, hparams)
+    if not stochastic:
+        w_mapped = fp_map(params, hparams)
+
     vs = [torch.zeros_like(w) for w in params]
     vs_vec = cat_list_to_tensor(vs)
     for k in range(K):
         vs_prev_vec = vs_vec
-        vs = torch_grad(w_mapped, params, grad_outputs=vs, retain_graph=True)
+
+        if stochastic:
+            w_mapped = fp_map(params, hparams)
+            vs = torch_grad(w_mapped, params, grad_outputs=vs, retain_graph=False)
+        else:
+            vs = torch_grad(w_mapped, params, grad_outputs=vs, retain_graph=True)
+
         vs = [v + gow for v, gow in zip(vs, grad_outer_w)]
         vs_vec = cat_list_to_tensor(vs)
         if float(torch.norm(vs_vec - vs_prev_vec)) < tol:
             break
+
+    if stochastic:
+        w_mapped = fp_map(params, hparams)
 
     grads = torch_grad(w_mapped, hparams, grad_outputs=vs, allow_unused=True)
     grads = [g + v if g is not None else v for g, v in zip(grads, grad_outer_hparams)]
@@ -60,18 +71,26 @@ def fixed_point(params, hparams, K, fp_map, outer_loss, tol=1e-10, set_grad=True
     return grads
 
 
-def CG(params, hparams, K, fp_map, outer_loss, tol=1e-10, set_grad=True):
+def CG(params, hparams, K, fp_map, outer_loss, tol=1e-10, set_grad=True, stochastic=False):
     params = [w.detach().requires_grad_(True) for w in params]
     o_loss = outer_loss(params, hparams)
     grad_outer_w, grad_outer_hparams = get_outer_gradients(o_loss, params, hparams)
 
-    w_mapped = fp_map(params, hparams)
+    if not stochastic:
+        w_mapped = fp_map(params, hparams)
 
     def dfp_map_dw(xs):
-        Jfp_mapTv = torch_grad(w_mapped, params, grad_outputs=xs, retain_graph=True)
+        if stochastic:
+            w_mapped_in = fp_map(params, hparams)
+            Jfp_mapTv = torch_grad(w_mapped_in, params, grad_outputs=xs, retain_graph=False)
+        else:
+            Jfp_mapTv = torch_grad(w_mapped, params, grad_outputs=xs, retain_graph=True)
         return [v - j for v, j in zip(xs, Jfp_mapTv)]
 
     vs = CG_torch.cg(dfp_map_dw, grad_outer_w, max_iter=K, epsilon=tol)  # K steps of conjugate gradient
+
+    if stochastic:
+        w_mapped = fp_map(params, hparams)
 
     grads = torch_grad(w_mapped, hparams, grad_outputs=vs)
     grads = [g + v for g, v in zip(grads, grad_outer_hparams)]
@@ -174,14 +193,8 @@ def update_tensor_grads(hparams, grads):
 
 
 def grad_unused_zero(output, inputs, grad_outputs=None, retain_graph=False, create_graph=False):
-    try:
-        grads = torch.autograd.grad(output, inputs, grad_outputs=grad_outputs, allow_unused=True,
-                                    retain_graph=retain_graph, create_graph=create_graph)
-    except Exception as err:
-        # TODO: remove this catch
-        print('-----------------grad_unused_zero Exception!--------------------')
-        traceback.print_tb(err.__traceback__)
-        grads = [None] * len(inputs)
+    grads = torch.autograd.grad(output, inputs, grad_outputs=grad_outputs, allow_unused=True,
+                                retain_graph=retain_graph, create_graph=create_graph)
 
     def grad_or_zeros(grad, var):
         return torch.zeros_like(var) if grad is None else grad

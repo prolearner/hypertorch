@@ -48,13 +48,13 @@ class GradientDescent(InnerOpt):
         return gd_step(wv, loss, sz, create_graph=create_graph)
 
 
-def gd_step(ws, loss, step_size, create_graph=True):
-    grads = torch.autograd.grad(loss, ws, create_graph=create_graph)
-    return [w - step_size * g for w, g in zip(ws, grads)]
+def gd_step(params, loss, step_size, create_graph=True):
+    grads = torch.autograd.grad(loss, params, create_graph=create_graph)
+    return [w - step_size * g for w, g in zip(params, grads)]
 
 
-def heavy_ball_step(ws, vs, loss, step_size, momentum,  create_graph=True):
-    grads = torch.autograd.grad(loss, ws, create_graph=create_graph)
-    return [w - step_size * g + momentum*(w - v) for g, w, v in zip(grads, ws, vs)], ws
+def heavy_ball_step(params, vs, loss, step_size, momentum, create_graph=True):
+    grads = torch.autograd.grad(loss, params, create_graph=create_graph)
+    return [w - step_size * g + momentum * (w - v) for g, w, v in zip(grads, params, vs)], params
 
 
