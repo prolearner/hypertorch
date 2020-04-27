@@ -22,12 +22,17 @@ Franceschi, L., Donini, M., Frasconi, P., & Pontil, M. (2017). Forward and rever
 it uses Higher (https://github.com/facebookresearch/higher) to get a stateless CNN.
 Works with Higher version 0.1.5 (version 0.1.4 causes memory leaks!).
 
-The 60000 training examples of the MNIST dataset are divided in 1000 (validation) and 5900 (training) and some
-percentage of the training labels (e.g. 50%) are changed randomly. 
+The setting is as follows.
+The training examples of the MNIST dataset are divided in validation (1000 examples) and training (5900 examples). 
+Some percentage of the training labels (e.g. 50%) are changed randomly (training set is corrupted). 
 
-The CNN below achieves < 91%  test accuracy when trained on the corrupted training set + the validation set 
-or on the validation only(to verify). By weighting the loss of each training examples with an hyperparameter
-optimized through a bilevel scheme with warm-start you can easily reach 96/97% accuracy.
+The training loss of each example is the classical cross-entropy weighted by an hyperparmaeter. 
+The hyperparameters are optimized through a bilevel scheme where the outer loss is the cross entroy 
+over the validation set. This procedure will be called hypercleaning because the validation set
+is used to "clean" the corrupted training set.
+
+A simple CNN achieves < 91%  test accuracy when trained normally on the union of  corrupted training set  and the 
+valadation set or using the validation only (to verify). The same CNN reaches easily 96/97% accuracy using hypercleaning.
 """
 
 
