@@ -12,17 +12,17 @@ from sklearn.model_selection import train_test_split
 """
 Hypercleaning  on mnist with higher integration.
 
-The 60000 training examples of mnist are divided in 1000 (validation) and 5900 (training) and some percentage
-of the training lables are changed randomly (e.g. 50%). 
+The 60000 training examples of the MNIST dataset are divided in 1000 (validation) and 5900 (training) and some percentage
+of the training labels (e.g. 50%) are changed randomly. 
 
-The CNN below achieves ~90%  test accuracy when trained on the corrupted training set. By weighting the loss of
-each examples with an hyperparameter trained using a bilevel scheme with warm-start you can easily reach 
-96/97% accuracy.
+The CNN below achieves < 91%  test accuracy when trained on the corrupted training set + the validation set 
+or on the validation only(to verify). By weighting the loss of each examples with an hyperparameter trained using
+a bilevel scheme with warm-start you can easily reach 96/97% accuracy.
 
 this experiment is similar to the one in 
 Mehra, A., & Hamm, J. (2019). Penalty Method for Inversion-Free Deep Bilevel Optimization.
-which is inspired by
-Franceschi, L., Donini, M., Frasconi, P., & Pontil, M. (2017, August). Forward and reverse gradient-based hyperparameter optimization.
+which is inspired by the simpler one in 
+Franceschi, L., Donini, M., Frasconi, P., & Pontil, M. (2017). Forward and reverse gradient-based hyperparameter optimization.
 """
 
 
@@ -56,6 +56,10 @@ class Net(nn.Module):
 
 
 class CustomLoader:
+    """
+    Needed to deal with hyperparameters corresponding to each example and minibatches.
+    Uses torch.utils.DataLoader on an array of indices.
+    """
     def __init__(self, x, y, batch_size, **loader_kwargs):
         self.x = x
         self.y = y
@@ -82,7 +86,7 @@ class CustomLoader:
 
 def train(hparams, model, fp_map, train_loader: CustomLoader, n_steps, log_interval):
     model.train()
-    params_history = [model.fast_params]
+    params_history = [model.fast_params]  # model should be a functional module from higher monkeypatch
     fp_map_history = []
 
     for t in range(n_steps):
