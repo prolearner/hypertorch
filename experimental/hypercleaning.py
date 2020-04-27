@@ -31,11 +31,11 @@ The hyperparameters are optimized through a bilevel scheme where the outer loss 
 over the validation set. This procedure will be called hypercleaning because the validation set
 is used to "clean" the corrupted training set.
 
-SimpleCNN achieves 93% test accuracy only on validation (verified with Momentum)
+SimpleCNN achieves 93% test accuracy only on validation (verified)
                    96/97% test accuracy with validation + 50% corrupted train
                    96/97 test accuracy with validation + 50% corrupted train + hypercleaning
 
-MehraCNN achieves  ~95% test accuracy only on validation (verified with Momentum)
+MehraCNN achieves  ~95% test accuracy only on validation (verified)
                    ~98% test accuracy with validation + 50% corrupted train
                    ~98% test accuracy with validation + 50% corrupted train + hypercleaning
 
