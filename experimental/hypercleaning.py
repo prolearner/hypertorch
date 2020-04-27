@@ -31,8 +31,16 @@ The hyperparameters are optimized through a bilevel scheme where the outer loss 
 over the validation set. This procedure will be called hypercleaning because the validation set
 is used to "clean" the corrupted training set.
 
-A simple CNN achieves < 91%  test accuracy when trained normally on the union of  corrupted training set  and the 
-valadation set or using the validation only (to verify). The same CNN reaches easily 96/97% accuracy using hypercleaning.
+SimpleCNN achieves 93% test accuracy only on validation (verified with Momentum)
+                   96/97% test accuracy with validation + 50% corrupted train
+                   96/97 test accuracy with validation + 50% corrupted train + hypercleaning
+
+MehraCNN achieves 94/95% test accuracy only on validation (verified with Momentum)
+                   ~98% test accuracy with validation + 50% corrupted train
+                   ~98% test accuracy with validation + 50% corrupted train + hypercleaning
+
+This differ greatly from Mehra et al 2019 which report < 91% accuracy for the settings without cleaning.
+I supposed they wrongly reported the accuracy of the feed forward model in that table .
 """
 
 
@@ -49,12 +57,15 @@ def main():
                         help='input batch size for validation (default: 1000)')
     parser.add_argument('--test-batch-size', type=int, default=1000, metavar='N',
                         help='input batch size for testing (default: 1000)')
-    parser.add_argument('--val-perc', type=float, default=0.0166666, metavar='M',
+    parser.add_argument('--val-perc', type=float, default=1- 0.0166666, metavar='M',
                         help='Percentage of examples in validation (default: 0.016666 = 1000 examples)')
-    parser.add_argument('--flip-perc', type=float, default=0.5, metavar='M',
+    parser.add_argument('--flip-perc', type=float, default=0.0, metavar='M',
                         help='Percentage of flipped labels examples (default: 0.5)')
 
-    parser.add_argument('--n_steps', type=int, default=10000, metavar='N',
+    parser.add_argument('--diff-train', action='store_true', default=False,
+                        help='differentiable train loop when true')
+
+    parser.add_argument('--n_steps', type=int, default=1000, metavar='N',
                         help='number of outer optimization steps')
     parser.add_argument('--no-warm_start', action='store_true', default=False,
                         help='disables warm-start on the network parameters')
@@ -64,7 +75,7 @@ def main():
                         help='number of backward steps')
     parser.add_argument('--inner-lr', type=float, default=0.1, metavar='LR',
                         help='learning rate (default: .1)')
-    parser.add_argument('--lr', type=float, default=0.1, metavar='M',
+    parser.add_argument('--lr', type=float, default=0.0, metavar='M',
                         help='Learning rate step (default: 0.1)')
 
     parser.add_argument('--eval_interval', type=float, default=10, metavar='M',
@@ -108,7 +119,7 @@ def main():
     y_train_oracle = y_train.clone()
     for i in range(n_flip):
         while y_train[i] == y_train_oracle[i]:
-            y_train[i] = torch.randint(low=0, high=10, size=(1,))
+            y_train.data[i] = torch.randint(low=0, high=10, size=(1,))
 
     train_iterator = CustomDataIterator(x_train, y_train, batch_size=args.batch_size, shuffle=True, **kwargs)
     val_iterator = CustomDataIterator(x_val, y_val, batch_size=args.val_batch_size, shuffle=True, **kwargs)
@@ -116,9 +127,9 @@ def main():
     loss_weights = torch.zeros_like(y_train).float().requires_grad_(True)
 
     #outer_opt = optim.Adam(lr=args.lr, params=hparams)
-    outer_opt = optim.SGD(lr=args.lr, momentum=0.9, params=[loss_weights])
+    outer_opt = torch.optim.SGD(lr=args.lr, momentum=0.9, params=[loss_weights])
 
-    model = SimpleCNN().to(device)
+    model = MehraCNN().to(device)
 
     for k in range(args.n_steps):
         start_time = time.time()
@@ -146,8 +157,15 @@ def main():
             val_accs.append(acc)
             return val_loss
 
-        params_history, fp_map_history = train([loss_weights], fmodel, gd_map, train_iterator,
-                                               n_steps=args.T, log_interval=args.inner_log_interval)
+        if args.diff_train:
+            params_history, fp_map_history = diff_train([loss_weights], fmodel, gd_map, train_iterator,
+                                                        n_steps=args.T, log_interval=args.inner_log_interval)
+        else:
+            optim = torch.optim.SGD(lr=args.inner_lr, momentum=0.9, params=model.parameters())
+            #optim = torch.optim.Adadelta(lr=args.inner_lr, params=model.parameters())
+            params_history = train([loss_weights], model, optim, train_iterator, n_steps=args.T,
+                                   log_interval=args.inner_log_interval, trajectory=True)
+            fp_map_history = [gd_map]*args.T
 
         outer_opt.zero_grad()
         # comment out the hypergradient approximation method below that you wish to use
@@ -167,6 +185,11 @@ def main():
             print('\nouter step={} ({:.2e}s)'.format(k, step_time))
             print('Val Set: Loss: {:.4f}, Accuracy: {:.2f}%'.format(val_losses[-1], 100. * val_accs[-1]))
 
+            corr = torch.ones_like(y_train)
+            corr[:n_flip] = 0
+            acc_hp = corr.eq(torch.sigmoid(loss_weights) > 0.5).float().sum() / len(corr)
+            print('Corr examples Accuracy: {:.2f}%'.format(100.*acc_hp))
+
         if k % args.eval_interval == 0 or k == args.n_steps-1:
             eval_model(params_history[-1], fmodel, device, test_loader)
             if args.save_model:
@@ -176,6 +199,7 @@ def main():
 
 
 class SimpleCNN(nn.Module):
+
     def __init__(self):
         super(SimpleCNN, self).__init__()
         self.conv1 = nn.Conv2d(1, 32, 3, 1)
@@ -196,6 +220,46 @@ class SimpleCNN(nn.Module):
         x = F.relu(x)
         x = self.dropout2(x)
         x = self.fc2(x)
+        output = F.log_softmax(x, dim=1)
+        return output
+
+
+class MehraCNN(nn.Module):
+    """ same CNN as Mehra et al 2019 (from https://github.com/jihunhamm/bilevel-penalty/)"""
+
+    def __init__(self):
+        super(MehraCNN, self).__init__()
+        self.conv1 = nn.Conv2d(1, 64, 5, 1)
+        self.conv2 = nn.Conv2d(64, 128, 5, 1)
+        self.dropout1 = nn.Dropout2d(0.25)
+        self.dropout2 = nn.Dropout2d(0.25)
+        self.dropout3 = nn.Dropout2d(0.5)
+        self.dropout4 = nn.Dropout2d(0.5)
+
+        self.fc1 = nn.Linear(2048, 512)
+        self.fc2 = nn.Linear(512, 256)
+        self.fc3 = nn.Linear(256, 10)
+
+    def forward(self, x):
+        x = self.conv1(x)
+        x = F.relu(x)
+        x = F.max_pool2d(x, 2)
+        x = self.dropout1(x)
+
+        x = self.conv2(x)
+        x = F.max_pool2d(x, 2)
+        x = self.dropout2(x)
+
+        x = torch.flatten(x, 1)
+        x = self.fc1(x)
+        x = F.relu(x)
+        x = self.dropout3(x)
+
+        x = self.fc2(x)
+        x = F.relu(x)
+        x = self.dropout4(x)
+
+        x = self.fc3(x)
         output = F.log_softmax(x, dim=1)
         return output
 
@@ -229,9 +293,31 @@ class CustomDataIterator:
         return [self.x[idx], self.y[idx], *[a[idx] for a in args]]
 
 
-def train(hparams, model, opt_step: callable, data_iterator: CustomDataIterator, n_steps, log_interval):
-    model.train()
-    params_history = [model.fast_params]  # model should be a functional module from higher monkeypatch
+def train(hparams, model, optim, data_iterator: CustomDataIterator, n_steps, log_interval,
+          trajectory=False):
+
+    params_history = []
+    for t in range(n_steps):
+        if trajectory:
+            params_history.append([p.detach().clone().requires_grad_(True) for p in model.parameters()])
+
+        x, y, exw = data_iterator.__next__(hparams[0])
+        loss = (torch.sigmoid(exw) * F.nll_loss(model(x), y, reduction='none')).mean()
+        optim.zero_grad()
+        loss.backward()
+        optim.step()
+
+        if t % log_interval == 0 or t == n_steps-1:
+            print('t={}, epoch={}, mb={} [{}/{}] Loss: {:.6f}'.format(
+                t, data_iterator.epoch, data_iterator.step, data_iterator.step * data_iterator.batch_size,
+                len(data_iterator.y), loss.item()))
+
+    params_history.append([p.detach().clone().requires_grad_(True) for p in model.parameters()])
+    return params_history
+
+
+def diff_train(hparams, params, opt_step, data_iterator: CustomDataIterator, n_steps, log_interval):
+    params_history = [params]
     fp_map_history = []
 
     for t in range(n_steps):

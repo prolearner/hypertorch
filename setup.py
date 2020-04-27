@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='hyperTorch',
-    version='0.001',
+    version='0.01',
     packages=['hg'],
     url='',
     license='',
