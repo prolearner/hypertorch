@@ -10,7 +10,7 @@ from  torch.utils.checkpoint import checkpoint
 from sklearn.model_selection import train_test_split
 
 """
-Hypercleaning  on mnist with higher integration.
+Hypercleaning on mnist using higher (https://github.com/facebookresearch/higher) to get a stateless CNN.
 
 The 60000 training examples of the MNIST dataset are divided in 1000 (validation) and 5900 (training) and some percentage
 of the training labels (e.g. 50%) are changed randomly. 
@@ -170,8 +170,6 @@ def main():
     device = torch.device("cuda" if cuda else "cpu")
     kwargs = {'num_workers': 1, 'pin_memory': True} if cuda else {}
 
-    # mnist_mean, mnist_std =0.1307, 0.3081
-
     mnist_train = datasets.MNIST('../data', download=True, train=True)
     test_loader = torch.utils.data.DataLoader(
         datasets.MNIST('../data', train=False, transform=transforms.ToTensor()),
@@ -188,22 +186,18 @@ def main():
     x_train, x_val, y_train, y_val = frnp(x_train).unsqueeze(1), frnp(x_val).unsqueeze(1),\
                                      frnp(y_train).long(), frnp(y_val).long()
 
-    #limit train set
-    #x_train, y_train = x_train[:1000], y_train[:1000]
+    # limit train set (DEBUG)
+    # x_train, y_train = x_train[:1000], y_train[:1000]
 
-    #flip labels
+    # flip labels
     n_flip = int(args.flip_perc*len(y_train))
     y_train_oracle = y_train.clone()
     for i in range(n_flip):
         while y_train[i] == y_train_oracle[i]:
             y_train[i] = torch.randint(low=0, high=10, size=(1,))
-    #y_train[:n_flip] = torch.LongTensor(n_flip).random_(0, 10)
-
 
     train_loader = CustomLoader(x_train, y_train, batch_size=args.batch_size, shuffle=True, **kwargs)
     val_loader = CustomLoader(x_val, y_val, batch_size=args.val_batch_size, shuffle=True, **kwargs)
-
-
 
     hparams = [torch.zeros_like(y_train).float().requires_grad_(True)]
     #outer_opt = optim.Adam(lr=args.lr, params=hparams)
@@ -212,16 +206,12 @@ def main():
     model_nf = Net().to(device)
 
     for k in range(args.n_steps):
-        #debug.print_tensors()
-
         model = higher.monkeypatch(model_nf, device=device, copy_initial_weights=True)
-        # optimizer = optim.Adadelta(model.parameters(), lr=args.lr)
 
-        # train_losses = []
         val_losses = []
         val_accs = []
 
-        class OPTMAP:
+        class GDMap:
             def __init__(self):
                 self.loss = None
 
@@ -230,7 +220,7 @@ def main():
                 self.loss = (torch.sigmoid(exw) * F.nll_loss(model(x, params=params), y, reduction='none')).mean()
                 return hg.gd_step(params, self.loss, args.inner_lr, create_graph=True)
 
-        fp_map = OPTMAP()
+        gd_map = GDMap()
 
         def val_loss(params, hparams):
             x, y = next(val_loader)
@@ -242,11 +232,11 @@ def main():
             val_accs.append(acc)
             return val_loss
 
-        params_history, fp_map_history = train(hparams, model, fp_map, train_loader,
+        params_history, fp_map_history = train(hparams, model, gd_map, train_loader,
                                                n_steps=args.T, log_interval=1)
 
         outer_opt.zero_grad()
-        hg.fixed_point(params_history[-1], hparams, K=args.K, fp_map=fp_map, outer_loss=val_loss, stochastic=False)
+        hg.fixed_point(params_history[-1], hparams, K=args.K, fp_map=gd_map, outer_loss=val_loss, stochastic=False)
         #hg.CG(params_history[-1], hparams, K=args.K, fp_map=fp_map, outer_loss=val_loss, stochastic=True)
         #hg.reverse(params_history, hparams, K=args.K, fp_map_history=fp_map_history,outer_loss=val_loss)
         #hg.reverse_unroll(params_history[-1], hparams, outer_loss=val_loss)
@@ -261,7 +251,7 @@ def main():
             eval_model(params_history[-1], model, device, test_loader)
 
             if args.save_model:
-                torch.save(model.state_dict(), "mnist_cnn_k{}.pt".format(k))
+                torch.save(model.state_dict(), "mnist_cnn_k{}.pt".format(k),)
 
 
 if __name__ == '__main__':
