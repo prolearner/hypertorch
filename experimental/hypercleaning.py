@@ -35,12 +35,12 @@ SimpleCNN achieves 93% test accuracy only on validation (verified with Momentum)
                    96/97% test accuracy with validation + 50% corrupted train
                    96/97 test accuracy with validation + 50% corrupted train + hypercleaning
 
-MehraCNN achieves 94/95% test accuracy only on validation (verified with Momentum)
+MehraCNN achieves  ~95% test accuracy only on validation (verified with Momentum)
                    ~98% test accuracy with validation + 50% corrupted train
                    ~98% test accuracy with validation + 50% corrupted train + hypercleaning
 
 This differ greatly from Mehra et al 2019 which report < 91% accuracy for the settings without cleaning.
-I supposed they wrongly reported the accuracy of the feed forward model in that table .
+I supposed they wrongly reported the accuracy of the feed forward model in that table.
 """
 
 
