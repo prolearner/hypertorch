@@ -57,7 +57,7 @@ Methods in this class are:
 - `reverse_unroll`: the method computes the approximate hypergradient by unrolling the entire computational graph of the update dynamics for solving the inner problem. The method is essentially a wrapper for standard backpropagation. IMPORTANT NOTE: the weights must be non-leaf tensor obtained through the application of "PyThorch differentiable" update dynamics (do not use built-in optimizers!). NOTE N2.: this method is memory hungry!
 - `reverse`: computes the hypergradient as above but uses less memory. It uses the trajectory information and recomputes all other necessary intermediate variables in the backward pass. It requires the list of past weights and the list of `callable` update mappings applied during the inner optimization.
 
-###Implicit differentiation methods:
+### Approximate Implicit Differentiation methods:
 These methods approximate the hypergradient equation directly by:
  * Using an approximate solution to the inner problem instead of the true one.
  * Computing an approximate solution to the linear system `(I-J)x_star = b`, where `J` and  `b` are respectively the jacobian of the fixed point map and the gradient of the outer objective both w.r.t the inner variable and computed on the approximate solution to the inner problem.
