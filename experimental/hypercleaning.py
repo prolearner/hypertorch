@@ -32,14 +32,20 @@ over the validation set. This procedure will be called hypercleaning because the
 is used to "clean" the corrupted training set.
 
 SimpleCNN achieves 93% test accuracy only on validation (verified)
-                   96/97% test accuracy with validation + 50% corrupted train
-                   96/97 test accuracy with validation + 50% corrupted train + hypercleaning
+                   96/97% test accuracy on 50% corrupted train
+                   96/97 test accuracy with hypercleaning using validation + 50% corrupted train 
 
-MehraCNN achieves  ~95% test accuracy only on validation (verified)
-                   ~98% test accuracy with validation + 50% corrupted train
-                   ~98% test accuracy with validation + 50% corrupted train + hypercleaning
+MehraCNN test accuracies (after some steps of inner and outer sgd (lr=0.1 mu=0.9 for both) with warm-starts):  
+~95% only on validation 
+~98% on  50% corrupted train
+~98% with hypercleaning validation + 50% corrupted train 
+~95% on  80% corrupted train
+~95% with hypercleaning validation + 80% corrupted train 
+~98% on  80% corrupted train + 90% of corrupted hyperparameters put to -10
+~97%  with hypercleaning on validation + 80% corrupted train + 90% of corrupted hyperparameters put to -10
 
-This differ greatly from Mehra et al 2019 which report < 91% accuracy for the settings without cleaning.
+
+These results differ greatly from Mehra et al 2019 which report < 91% accuracy for the settings without cleaning.
 I supposed they wrongly reported the accuracy of the feed forward model in that table.
 """
 
@@ -57,10 +63,14 @@ def main():
                         help='input batch size for validation (default: 1000)')
     parser.add_argument('--test-batch-size', type=int, default=1000, metavar='N',
                         help='input batch size for testing (default: 1000)')
-    parser.add_argument('--val-perc', type=float, default=1- 0.0166666, metavar='M',
+    parser.add_argument('--val-perc', type=float, default=0.0166666, metavar='M',
                         help='Percentage of examples in validation (default: 0.016666 = 1000 examples)')
-    parser.add_argument('--flip-perc', type=float, default=0.0, metavar='M',
+    parser.add_argument('--flip-perc', type=float, default=0.8, metavar='M',
                         help='Percentage of flipped labels examples (default: 0.5)')
+
+    parser.add_argument('--spotted_perc', type=float, default=0.0, metavar='M',
+                        help='percentage of hyperameters to be put to -10 at the start, used to '
+                             'simulate possible initialization from a model trained on the validation set only')
 
     parser.add_argument('--diff-train', action='store_true', default=False,
                         help='differentiable train loop when true')
@@ -74,9 +84,13 @@ def main():
     parser.add_argument('--K', type=int, default=10, metavar='N',
                         help='number of backward steps')
     parser.add_argument('--inner-lr', type=float, default=0.1, metavar='LR',
-                        help='learning rate (default: .1)')
+                        help='inner learning rate (default: .1)')
+    parser.add_argument('--inner-mu', type=float, default=0.9, metavar='LR',
+                        help='inner momentum rate (default: .9)')
     parser.add_argument('--lr', type=float, default=0.0, metavar='M',
                         help='Learning rate step (default: 0.1)')
+    parser.add_argument('--momentum', type=float, default=0.9, metavar='M',
+                        help='momentum (default 0.9)')
 
     parser.add_argument('--eval_interval', type=float, default=10, metavar='M',
                         help='test set evaluation interval (default: 10)')
@@ -88,6 +102,7 @@ def main():
     parser.add_argument('--save-model', action='store_true', default=False,
                         help='For Saving the current Model')
     args = parser.parse_args()
+    print(args, '\n')
 
     cuda = not args.no_cuda and torch.cuda.is_available()
     device = torch.device("cuda" if cuda else "cpu")
@@ -116,6 +131,8 @@ def main():
 
     # flip training labels
     n_flip = int(args.flip_perc*len(y_train))
+
+
     y_train_oracle = y_train.clone()
     for i in range(n_flip):
         while y_train[i] == y_train_oracle[i]:
@@ -126,8 +143,11 @@ def main():
 
     loss_weights = torch.zeros_like(y_train).float().requires_grad_(True)
 
-    #outer_opt = optim.Adam(lr=args.lr, params=hparams)
-    outer_opt = torch.optim.SGD(lr=args.lr, momentum=0.9, params=[loss_weights])
+    # simulate validation trained model accuracy
+    loss_weights.data[:int(args.spotted_perc*n_flip)] = - 10
+
+    # outer_opt = optim.Adam(lr=args.lr, params=hparams)
+    outer_opt = torch.optim.SGD(lr=args.lr, momentum=args.momentum, params=[loss_weights])
 
     model = MehraCNN().to(device)
 
@@ -161,7 +181,7 @@ def main():
             params_history, fp_map_history = diff_train([loss_weights], fmodel, gd_map, train_iterator,
                                                         n_steps=args.T, log_interval=args.inner_log_interval)
         else:
-            optim = torch.optim.SGD(lr=args.inner_lr, momentum=0.9, params=model.parameters())
+            optim = torch.optim.SGD(lr=args.inner_lr, momentum=args.inner_mu, params=model.parameters())
             #optim = torch.optim.Adadelta(lr=args.inner_lr, params=model.parameters())
             params_history = train([loss_weights], model, optim, train_iterator, n_steps=args.T,
                                    log_interval=args.inner_log_interval, trajectory=True)
