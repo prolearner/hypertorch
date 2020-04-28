@@ -5,15 +5,15 @@ Lightweight research-oriented package to compute approximate hypergradients in P
 ## What is an hypergradient?
 Given the following bi-level problem.
 
-<img src="https://latex.codecogs.com/gif.latex?\large&space;\min_{\lambda}&space;f(\lambda)=E(w(\lambda),\lambda),\quad&space;w(\lambda)=\Phi(w(\lambda),\lambda)." title="\large \min_{\lambda} f(\lambda)=E(w(\lambda),\lambda),\quad w(\lambda)=\Phi(w(\lambda),\lambda)." />
+![bilevel](./resources/bilevel.svg)
 
 We call **hypegradient** the following quantity.
 ![hypergradient](./resources/hypergradient.svg)
-<a href="https://www.codecogs.com/eqnedit.php?latex=\large&space;\nabla&space;f(\lambda)&space;=&space;\nabla_2&space;E(w(\lambda),&space;\lambda)&space;&plus;&space;\partial_2&space;\Phi(w(\lambda),&space;\lambda)^\top&space;(I-&space;\partial_1&space;\Phi(w(\lambda),&space;\lambda)^\top)^{-1}&space;\nabla_1&space;E&space;(w(\lambda),&space;\lambda)." target="_blank"><img src="https://latex.codecogs.com/gif.latex?\large&space;\nabla&space;f(\lambda)&space;=&space;\nabla_2&space;E(w(\lambda),&space;\lambda)&space;&plus;&space;\partial_2&space;\Phi(w(\lambda),&space;\lambda)^\top&space;(I-&space;\partial_1&space;\Phi(w(\lambda),&space;\lambda)^\top)^{-1}&space;\nabla_1&space;E&space;(w(\lambda),&space;\lambda)." title="\large \nabla f(\lambda) = \nabla_2 E(w(\lambda), \lambda) + \partial_2 \Phi(w(\lambda), \lambda)^\top (I- \partial_1 \Phi(w(\lambda), \lambda)^\top)^{-1} \nabla_1 E (w(\lambda), \lambda)." /></a>
 
-* <img src="https://latex.codecogs.com/gif.latex?\large&space;E(w,\lambda)" title="\large E(w,\lambda)" /> is called the `outer objective` (e.g. the validation loss).
-* <img src="https://latex.codecogs.com/gif.latex?\Phi(w,\lambda)" title="\Phi(w,\lambda)" /> is called the `fixed point map` (e.g. a gradient descent step or the state update function in a recurrent model)
-* finding the solution of the fixed point equation <img src="https://latex.codecogs.com/gif.latex?\large&space;w(\lambda)=\Phi(w(\lambda),\lambda)" title="\large w(\lambda)=\Phi(w(\lambda),\lambda)" /> is referred to as the `inner problem`. This can be done by repeatedly applying the fixed point map or using a different inner algorithm.
+* ![outerobjective](./resources/outer_objective.svg)
+is called the `outer objective` (e.g. the validation loss).
+* ![Phi](./resources/Phi.svg)is called the `fixed point map` (e.g. a gradient descent step or the state update function in a recurrent model)
+* finding the solution of the fixed point equation ![fixed_point_eq](./resources/fixed_point_eq.svg) is referred to as the `inner problem`. This can be done by repeatedly applying the fixed point map or using a different inner algorithm.
 
 
 ## Quickstart
