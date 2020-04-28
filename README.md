@@ -68,7 +68,7 @@ These methods approximate the hypergradient equation directly by:
 Methods in this class are:
 - `fixed_point`: it approximately solves the linear system by repeatedly applying the map `T(x) = Jx + b`. NOTE: this method converges only when the fixed point map and consequently the map `T` are contractions.        
 - `CG`: it approximately solves the linear system with the conjugate gradient method. IMPORTANT N0TE: `J` must be symmetric for this to work!
-- `CG_normal_eq`: As above, but uses conjugate gradient on the normal equations to deal with the non-symmetric case. NOTE: the cost per conjugate gradient iteration can be much higher than the other methods.
+- `CG_normal_eq`: As above, but uses conjugate gradient on the normal equations (i.e. solves `J^TJx = J^Tb` instead) to deal with the non-symmetric case. NOTE: the cost per conjugate gradient iteration can be much higher than the other methods.
 
 ## Cite
 
