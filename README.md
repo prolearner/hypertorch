@@ -2,7 +2,7 @@
 
 Lightweight package to compute approximate hypergradients in PyTorch.
 
-## What we mean by hypergradient~~~~~~~~
+## What we mean by hypergradient
 Given the following bi-level problem.
 
 <img src="https://latex.codecogs.com/gif.latex?\large&space;f(\lambda)&space;=&space;E(w(\lambda),&space;\lambda),&space;\quad&space;w(\lambda)&space;=&space;\Phi(w(\lambda),&space;\lambda)." title="\large f(\lambda) = E(w(\lambda), \lambda), \quad w(\lambda) = \Phi(w(\lambda), \lambda)." />
