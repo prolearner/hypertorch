@@ -51,7 +51,8 @@ All methods require as input:
 - a `callable` that represents the differentiable update mapping (except `reverse_unroll`). For example this can be an SGD step.  
 
 ### Iterative differentiation methods:
-These methods differentiate through the update dynamic used to solve the inner problem.
+These methods differentiate through the update dynamics used to solve
+the inner problem.
 
 Methods in this class are:
 - `reverse_unroll`: the method computes the approximate hypergradient by unrolling the entire computational graph of the update dynamics for solving the inner problem. The method is essentially a wrapper for standard backpropagation. IMPORTANT NOTE: the weights must be non-leaf tensor obtained through the application of "PyThorch differentiable" update dynamics (do not use built-in optimizers!). NOTE N2.: this method is memory hungry!
