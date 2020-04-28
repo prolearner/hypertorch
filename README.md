@@ -8,12 +8,14 @@ Given the following bi-level problem.
 ![bilevel](./resources/bilevel.svg)
 
 We call **hypegradient** the following quantity.
+
 ![hypergradient](./resources/hypergradient.svg)
 
+Where:
 * ![outerobjective](./resources/outer_objective.svg)
 is called the `outer objective` (e.g. the validation loss).
 * ![Phi](./resources/Phi.svg)is called the `fixed point map` (e.g. a gradient descent step or the state update function in a recurrent model)
-* finding the solution of the fixed point equation ![fixed_point_eq](./resources/fixed_point_eq.svg) is referred to as the `inner problem`. This can be done by repeatedly applying the fixed point map or using a different inner algorithm.
+* finding the solution of the fixed point equation ![fixed_point_eq](./resources/fixed_point_eq.svg) is referred to as the `inner problem`. This can be solved by repeatedly applying the fixed point map or using a different inner algorithm.
 
 
 ## Quickstart
