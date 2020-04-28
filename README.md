@@ -8,7 +8,7 @@ Given the following bi-level problem.
 <img src="https://latex.codecogs.com/gif.latex?\large&space;\min_{\lambda}&space;f(\lambda)=E(w(\lambda),\lambda),\quad&space;w(\lambda)=\Phi(w(\lambda),\lambda)." title="\large \min_{\lambda} f(\lambda)=E(w(\lambda),\lambda),\quad w(\lambda)=\Phi(w(\lambda),\lambda)." />
 
 We call **hypegradient** the following quantity.
-
+![hypergradient](./resources/hypergradient.svg)
 <a href="https://www.codecogs.com/eqnedit.php?latex=\large&space;\nabla&space;f(\lambda)&space;=&space;\nabla_2&space;E(w(\lambda),&space;\lambda)&space;&plus;&space;\partial_2&space;\Phi(w(\lambda),&space;\lambda)^\top&space;(I-&space;\partial_1&space;\Phi(w(\lambda),&space;\lambda)^\top)^{-1}&space;\nabla_1&space;E&space;(w(\lambda),&space;\lambda)." target="_blank"><img src="https://latex.codecogs.com/gif.latex?\large&space;\nabla&space;f(\lambda)&space;=&space;\nabla_2&space;E(w(\lambda),&space;\lambda)&space;&plus;&space;\partial_2&space;\Phi(w(\lambda),&space;\lambda)^\top&space;(I-&space;\partial_1&space;\Phi(w(\lambda),&space;\lambda)^\top)^{-1}&space;\nabla_1&space;E&space;(w(\lambda),&space;\lambda)." title="\large \nabla f(\lambda) = \nabla_2 E(w(\lambda), \lambda) + \partial_2 \Phi(w(\lambda), \lambda)^\top (I- \partial_1 \Phi(w(\lambda), \lambda)^\top)^{-1} \nabla_1 E (w(\lambda), \lambda)." /></a>
 
 * <img src="https://latex.codecogs.com/gif.latex?\large&space;E(w,\lambda)" title="\large E(w,\lambda)" /> is called the `outer objective` (e.g. the validation loss).
