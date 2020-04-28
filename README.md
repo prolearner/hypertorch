@@ -39,7 +39,7 @@ Hypergadients are useful to perform
 
 ## Install
 
-COMING SOON (having some troubles at the moment :/ ) 
+COMING SOON (for the time being you can just copy paste the folder `hg` into your project) 
 
 ## Implmented methods
 
