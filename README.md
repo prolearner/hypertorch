@@ -22,7 +22,7 @@ a fixed point mapping
 
 ## Quickstart
 
-See this [IPython book](https://github.com/prolearner/hyperTorch/blob/master/examples/logistic_regression.ipynb), where we show how to compute the hypergradient to optimize the regularization parameter of a simple logistic regression model.
+See this [IPython book](https://github.com/prolearner/hyperTorch/blob/master/examples/logistic_regression.ipynb), where we show how to compute the hypergradient to optimize the regularization parameters of a simple logistic regression model.
 
 MORE EXAMPLES COMING SOON
 
