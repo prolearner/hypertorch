@@ -6,12 +6,12 @@ import torch.optim as optim
 import time
 from torchvision import datasets, transforms
 from torch.utils.data import DataLoader, TensorDataset
-from  torch.utils.checkpoint import checkpoint
+from torch.utils.checkpoint import checkpoint
 from sklearn.model_selection import train_test_split
 
 
 import higher
-import hg
+import hypergrad
 
 """
 This experiment is similar to the one in 
@@ -162,7 +162,7 @@ def main():
             def __call__(self, params, hparams):
                 x, y, exw = train_iterator.__next__(hparams[0])
                 self.loss = (torch.sigmoid(exw) * F.nll_loss(fmodel(x, params=params), y, reduction='none')).mean()
-                return hg.gd_step(params, self.loss, args.inner_lr, create_graph=True)
+                return hypergrad.gd_step(params, self.loss, args.inner_lr, create_graph=True)
 
         gd_map = GDMap()
         val_losses, val_accs = [], []
@@ -189,11 +189,11 @@ def main():
 
         outer_opt.zero_grad()
         # comment out the hypergradient approximation method below that you wish to use
-        hg.fixed_point(params_history[-1], [loss_weights], K=args.K, fp_map=gd_map, outer_loss=val_loss,
-                       stochastic=False)
-        #hg.CG(params_history[-1], hparams, K=args.K, fp_map=fp_map, outer_loss=val_loss, stochastic=True)
-        #hg.reverse(params_history, hparams, K=args.K, fp_map_history=fp_map_history,outer_loss=val_loss)
-        #hg.reverse_unroll(params_history[-1], hparams, outer_loss=val_loss)
+        hypergrad.fixed_point(params_history[-1], [loss_weights], K=args.K, fp_map=gd_map, outer_loss=val_loss,
+                              stochastic=False)
+        #hypergrad.CG(params_history[-1], hparams, K=args.K, fp_map=fp_map, outer_loss=val_loss, stochastic=True)
+        #hypergrad.reverse(params_history, hparams, K=args.K, fp_map_history=fp_map_history,outer_loss=val_loss)
+        #hypergrad.reverse_unroll(params_history[-1], hparams, outer_loss=val_loss)
         outer_opt.step()
 
         if not args.no_warm_start:

@@ -1,6 +1,6 @@
 import torch
 from torch.autograd import grad as torch_grad
-from hg import CG_torch
+from hypergrad import CG_torch
 import traceback
 
 
