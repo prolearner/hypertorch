@@ -5,7 +5,7 @@ Lightweight package to compute approximate hypergradients in PyTorch.
 ## What we mean by hypergradient
 Given the following bi-level problem.
 
-<img src="https://latex.codecogs.com/gif.latex?\large&space;f(\lambda)&space;=&space;E(w(\lambda),&space;\lambda),&space;\quad&space;w(\lambda)&space;=&space;\Phi(w(\lambda),&space;\lambda)." title="\large f(\lambda) = E(w(\lambda), \lambda), \quad w(\lambda) = \Phi(w(\lambda), \lambda)." />
+<img src="https://latex.codecogs.com/gif.latex?\large&space;\min f(\lambda)&space;=&space;E(w(\lambda),&space;\lambda),&space;\quad&space;w(\lambda)&space;=&space;\Phi(w(\lambda),&space;\lambda)." title="\large \min f(\lambda) = E(w(\lambda), \lambda), \quad w(\lambda) = \Phi(w(\lambda), \lambda)." />
 
 We call **hypegradient** the following quantity.
 
@@ -13,7 +13,7 @@ We call **hypegradient** the following quantity.
 
 * <img src="https://latex.codecogs.com/gif.latex?E(w,&space;\lambda)" title="E(w, \lambda)" /> is called the `outer objective` (e.g. the validation loss).
 * <img src="https://latex.codecogs.com/gif.latex?\Phi(w,\lambda)" title="\Phi(w,\lambda)" /> is called the `fixed point map` (e.g. a gradient descent step or the state update function in a recurrent model)
-* finding the solution of the fixed point equation <img src="https://latex.codecogs.com/gif.latex?w(\lambda)&space;=&space;\Phi(w(\lambda),&space;\lambda)." title="w(\lambda) = \Phi(w(\lambda), \lambda)." /> is referred to as the `inner problem`. This can be done by repeatedly applying the fixed point map or using a different inner algorithm.
+* finding the solution of the fixed point equation <img src="https://latex.codecogs.com/gif.latex?w(\lambda)&space;=&space;\Phi(w(\lambda),&space;\lambda)" title="w(\lambda) = \Phi(w(\lambda), \lambda)" /> is referred to as the `inner problem`. This can be done by repeatedly applying the fixed point map or using a different inner algorithm.
 
 
 ## Quickstart
