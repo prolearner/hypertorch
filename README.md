@@ -16,11 +16,8 @@ given an outer objective
 <img src="https://latex.codecogs.com/gif.latex?E(w,&space;\lambda)" title="E(w, \lambda)" />
 a fixed point mapping 
 <img src="https://latex.codecogs.com/gif.latex?\Phi(w,\lambda)" title="\Phi(w,\lambda)" />
-which for most methods has to be a contraction and an approximate solution to the fixed point equation 
+(which for most methods has to be a contraction) and an approximate solution to the fixed point equation 
 <img src="https://latex.codecogs.com/gif.latex?w(\lambda)&space;=&space;\Phi(w(\lambda),&space;\lambda)." title="w(\lambda) = \Phi(w(\lambda), \lambda)." />
- 
-The parameter `K` controls the number of iteration of the  hypergradient approximation algorithms.
-Higher `K` correspond to higher accuracy and higher computation time (scales linearly with `K`)
 
 
 ## Quickstart
@@ -57,6 +54,9 @@ Currently implemented are:
 - `fixed_point`: implicit differentiation; it computes the hypergradient by iterating the differentiated update mapping at the last inner iterate, interpreted as a fixed point equation. NOTE: good pracices to prevent divercence include checking that the update mapping is indeed a contracton.        
 - `CG`: implicit differentiation; it computes the hypergradient by approximately solving a linear system arising from the hypergradient equation by conjugate gradient. As `fixed_point`, `CG` needs only infromation of the last iterate. IMPORTANT N0TE: the Jacobian of the update mapping (w.r.t. the inner variables) must be symmetric!
 - `CG_normal_eq`: implicit differentiation: As above, but uses conjugate gradient on the normal equations to deal with the non-symmetric case.  
+
+Where available, the parameter `K` controls the number of iterations of the  hypergradient approximation algorithms.
+Generally speaking, higher `K` correspond to higher accuracy and higher computation time (scales linearly with `K`)
 
 ## Cite
 
