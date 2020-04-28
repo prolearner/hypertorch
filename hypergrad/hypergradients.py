@@ -14,14 +14,14 @@ def reverse_unroll(params, hparams, outer_loss, set_grad=True):
 
 
 # noinspection PyUnusedLocal
-def reverse(params_history, hparams, K, fp_map_history, outer_loss, tol=1e-10, set_grad=True):
+def reverse(params_history, hparams, fp_map_history, outer_loss, tol=1e-10, set_grad=True):
     params_history = [[w.detach().requires_grad_(True) for w in params] for params in params_history]
     o_loss = outer_loss(params_history[-1], hparams)
     grad_outer_w, grad_outer_hparams = get_outer_gradients(o_loss, params_history[-1], hparams)
 
     alphas = grad_outer_w
     grads = [torch.zeros_like(w) for w in hparams]
-    K = min(K, len(params_history) - 1)
+    K = len(params_history) - 1
     for k in range(-2, -(K + 2), -1):
         w_mapped = fp_map_history[k + 1](params_history[k], hparams)
         bs = grad_unused_zero(w_mapped, hparams, grad_outputs=alphas, retain_graph=True)

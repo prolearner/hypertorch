@@ -42,7 +42,7 @@ pip install .
 
 ## Implmented methods
 
-The main methods for computing hypergradients are in the module `hyperTorch/hg/hypergradients.py`. 
+The main methods for computing hypergradients are in the module `hypergrad/hypergradients.py`. 
 
 All methods require as input:
 - a list of tensors representing the inner variables (models' weights);
@@ -50,15 +50,24 @@ All methods require as input:
 - a `callable` differentiable outer objective;
 - a `callable` that represents the differentiable update mapping (except `reverse_unroll`). For example this can be an SGD step.  
 
-Currently implemented are:
-- `reverse_unroll`: iterative differentiation; the method computes the approximate hypergradient by unrolling the entire computational graph of the update dynamics for solving the inner problem. The method is essentially a wrapper for standard backpropagation and needs only the outer objective. IMPORTANT NOTE: for the method to work properly, the weights be obtained through the application of a "PyThorch differentiable" optimization dynamics (do not use built-in optimizers!). NOTE N2.: this method is memory hungry!
-- `reverse`: iterative differentiation; computes the hypergradient as above but it is less memory hungry. It uses the trajectory information and recomputes all other necessary intermediate variables in the backward pass. The trajectory must be passed as a list of past weights (that need to be stored in the forward pass) and `callable` update mappings.
-- `fixed_point`: implicit differentiation; it computes the hypergradient by iterating the differentiated update mapping at the last inner iterate, interpreted as a fixed point equation. NOTE: good pracices to prevent divercence include checking that the update mapping is indeed a contracton.        
-- `CG`: implicit differentiation; it computes the hypergradient by approximately solving a linear system arising from the hypergradient equation by conjugate gradient. As `fixed_point`, `CG` needs only infromation of the last iterate. IMPORTANT N0TE: the Jacobian of the update mapping (w.r.t. the inner variables) must be symmetric!
-- `CG_normal_eq`: implicit differentiation: As above, but uses conjugate gradient on the normal equations to deal with the non-symmetric case.  
+### Iterative differentiation methods:
+These methods differentiate through the update dynamic used to solve the inner problem.
 
-Where available, the parameter `K` controls the number of iterations of the  hypergradient approximation algorithms.
-Generally speaking, higher `K` correspond to higher accuracy and higher computation time (scales linearly with `K`)
+Methods in this class are:
+- `reverse_unroll`: the method computes the approximate hypergradient by unrolling the entire computational graph of the update dynamics for solving the inner problem. The method is essentially a wrapper for standard backpropagation. IMPORTANT NOTE: the weights must be non-leaf tensor obtained through the application of "PyThorch differentiable" update dynamics (do not use built-in optimizers!). NOTE N2.: this method is memory hungry!
+- `reverse`: computes the hypergradient as above but uses less memory. It uses the trajectory information and recomputes all other necessary intermediate variables in the backward pass. It requires the list of past weights and the list of `callable` update mappings applied during the inner optimization.
+
+###Implicit differentiation methods:
+These methods approximate the hypergradient equation directly by:
+ * Using an approximate solution to the inner problem instead of the true one.
+ * Computing an approximate solution to the linear system `(I-J)x_star = b`, where `J` and  `b` are respectively the jacobian of the fixed point map and the gradient of the outer objective both w.r.t the inner variable and computed on the approximate solution to the inner problem.
+ 
+ Since computing and storing `J` is usually infeasible, these methods exploit `torch.autograd` to compute the Jacobian-vector product `Jx` efficiently. Additionally they do not require storing the trajectory of the inner solver, thus providing a potentially large memory advantage over iterative differentiation.
+
+Methods in this class are:
+- `fixed_point`: it approximately solves the linear system by repeatedly applying the map `T(x) = Jx + b`. NOTE: this method converges when the fixed point map and consequently the map `T` are contractions.        
+- `CG`: it approximately solves the linear system with the conjugate gradient method. IMPORTANT N0TE: `J` must be symmetric for this to work!
+- `CG_normal_eq`: As above, but uses conjugate gradient on the normal equations to deal with the non-symmetric case. NOTE: the cost per conjugate gradient iteration can be much higher than the other methods.
 
 ## Cite
 
