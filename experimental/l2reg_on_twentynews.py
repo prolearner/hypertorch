@@ -35,9 +35,11 @@ np.random.seed(seed)
 # load twentynews and preprocess
 val_size = 0.5
 X, y = fetch_20newsgroups_vectorized(subset='train', return_X_y=True,
-                                     remove=('headers', 'footers', 'quotes'))
+                                     #remove=('headers', 'footers', 'quotes')
+                                     )
 x_test, y_test = fetch_20newsgroups_vectorized(subset='test', return_X_y=True,
-                                               remove=('headers', 'footers', 'quotes'))
+                                               #remove=('headers', 'footers', 'quotes')
+                                               )
 
 
 x_train, x_val, y_train, y_val = train_test_split(X, y, stratify=y, test_size=val_size)
@@ -117,30 +119,36 @@ bias = False  # without bias outer_lr can be bigger (much faster convergence)
 train_log_interval = 100
 val_log_interval = 1
 
-reg_params = torch.zeros(101631).requires_grad_(True)  # one hp per feature
-# reg_params = torch.zeros(1).requires_grad_(True)  # one hp only
+l2_reg_params = torch.zeros(n_features).requires_grad_(True)  # one hp per feature
+#l2_reg_params = (-20.*torch.ones(1)).requires_grad_(True)  # one l2 hp only (best when really low)
+l1_reg_params = (0.*torch.ones(1)).requires_grad_(True)  # one l1 hp only (best when really low)
+#l1_reg_params = (-1.*torch.ones(n_features)).requires_grad_(True)
 
-ones_dxc = torch.ones(101631, 20)
+hparams = [l2_reg_params]
+
+ones_dxc = torch.ones(n_features, n_classes)
 
 
-def reg_f(params, lmbd):
-    return 0.5 * ((params[0] ** 2) * torch.exp(lmbd.unsqueeze(1) * ones_dxc)).mean() \
-          #+ torch.abs(params[0]).mean()*100.0
+def reg_f(params, l2_reg_params, l1_reg_params=None):
+    r = 0.5 * ((params[0] ** 2) * torch.exp(l2_reg_params.unsqueeze(1) * ones_dxc)).mean()
+    if l1_reg_params is not None:
+        r += (params[0].abs() * torch.exp(l1_reg_params.unsqueeze(1) * ones_dxc)).mean()
+    return r
 
 
-outer_opt = torch.optim.SGD(lr=outer_lr, momentum=outer_mu, params=[reg_params])
-#outer_opt = torch.optim.Adam(lr=0.01, params=[reg_params])
+outer_opt = torch.optim.SGD(lr=outer_lr, momentum=outer_mu, params=hparams)
+#outer_opt = torch.optim.Adam(lr=0.01, params=hparams)
 
 
 params_history = []
 val_losses, val_accs = [], []
 test_losses, test_accs = [], []
 
-w = torch.zeros(101631, 20).requires_grad_(True)
+w = torch.zeros(n_features, n_classes).requires_grad_(True)
 parameters = [w]
 
 if bias:
-    b = torch.zeros(20).requires_grad_(True)
+    b = torch.zeros(n_classes).requires_grad_(True)
     parameters.append(b)
 
 
@@ -153,7 +161,7 @@ def out_f(x, params):
 def train_loss(params, hparams, data):
     x_mb, y_mb = data
     out = out_f(x_mb,  params)
-    return F.cross_entropy(out, y_mb) + reg_f(params, hparams[0])
+    return F.cross_entropy(out, y_mb) + reg_f(params, *hparams)
 
 
 def val_loss(opt_params, hparams):
@@ -197,8 +205,7 @@ for o_step in range(n_steps):
     else:
         params_history = [inner_opt.get_opt_params(parameters)]
     for t in range(T):
-        params_history.append(inner_opt(params_history[-1], [reg_params],
-                                        create_graph=False))
+        params_history.append(inner_opt(params_history[-1], hparams, create_graph=False))
         inner_losses.append(inner_opt.curr_loss)
 
         if t % train_log_interval == 0 or t == T-1:
@@ -207,9 +214,9 @@ for o_step in range(n_steps):
     final_params = params_history[-1]
 
     outer_opt.zero_grad()
-    #hg.reverse(params_history[-K-1:], [reg_params], [inner_opt]*K, val_loss)
-    #hg.fixed_point(final_params, [reg_params], K, inner_opt, val_loss, stochastic=False, tol=tol)
-    hg.CG(final_params[:len(parameters)], [reg_params], K, inner_opt_cg, val_loss, stochastic=False, tol=tol)
+    #hg.reverse(params_history[-K-1:], hparams, [inner_opt]*K, val_loss)
+    #hg.fixed_point(final_params, hparams, K, inner_opt, val_loss, stochastic=False, tol=tol)
+    hg.CG(final_params[:len(parameters)], hparams, K, inner_opt_cg, val_loss, stochastic=False, tol=tol)
     outer_opt.step()
 
     for p, new_p in zip(parameters, final_params[:len(parameters)]):
@@ -224,9 +231,12 @@ for o_step in range(n_steps):
         test_loss, test_acc = eval(final_params[:len(parameters)], x_test, y_test)
         test_losses.append(test_loss)
         test_accs.append(test_acc)
-        print('o_step={} ({:.2e}s) Val loss: {}, Val Acc: {}'.format(o_step, iter_time, val_losses[-1], val_accs[-1]))
-        print('          Test loss: {}, Test Acc: {}'.format(test_loss, test_acc))
-
+        print('o_step={} ({:.2e}s) Val loss: {:.4e}, Val Acc: {:.2f}%'.format(o_step, iter_time, val_losses[-1],
+                                                                              100*val_accs[-1]))
+        print('          Test loss: {:.4e}, Test Acc: {:.2f}%'.format(test_loss, 100*test_acc))
+        print('          l2_hp norm: {:.4e}'.format(torch.norm(hparams[0])))
+        if len(hparams) == 2:
+            print('          l1_hp : ', torch.norm(hparams[1]))
 
 print('HPO ended in {:.2e} seconds\n'.format(total_time))
 
@@ -257,19 +267,19 @@ else:
     inner_opt = hg.GradientDescent(train_loss, inner_lr, data_or_iter=train_val_iterator)
 
 
-T_final = 2000
-w = torch.zeros(101631, 20).requires_grad_(True)
+T_final = 4000
+w = torch.zeros(n_features, n_classes).requires_grad_(True)
 parameters = [w]
 
 if bias:
-    b = torch.zeros(20).requires_grad_(True)
+    b = torch.zeros(n_classes).requires_grad_(True)
     parameters.append(b)
 
 opt_params = inner_opt.get_opt_params(parameters)
 
 print('Final training on both train and validation sets with final hyperparameters')
 for t in range(T_final):
-    opt_params = inner_opt(opt_params, [reg_params], create_graph=False)
+    opt_params = inner_opt(opt_params, hparams, create_graph=False)
     train_loss = inner_opt.curr_loss
 
     if t % train_log_interval == 0 or t == T_final-1:
