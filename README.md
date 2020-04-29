@@ -54,7 +54,7 @@ All methods require as input:
 
 ### Iterative differentiation methods:
 These methods differentiate through the update dynamics used to solve
-the inner problem.
+the inner problem. This allows to optimize the inner solver parameters such as the learning rate and momentum.
 
 Methods in this class are:
 - `reverse_unroll`: computes the approximate hypergradient by unrolling the entire computational graph of the update dynamics for solving the inner problem. The method is essentially a wrapper for standard backpropagation. IMPORTANT NOTE: the weights must be non-leaf tensors obtained through the application of "PyThorch differentiable" update dynamics (do not use built-in optimizers!). NOTE N2.: this method is memory hungry!
@@ -65,7 +65,7 @@ These methods approximate the hypergradient equation directly by:
  * Using an approximate solution to the inner problem instead of the true one.
  * Computing an approximate solution to the linear system `(I-J)x_star = b`, where `J` and  `b` are respectively the transpose of the jacobian of the fixed point map and the gradient of the outer objective both w.r.t the inner variable and computed on the approximate solution to the inner problem.
  
- Since computing and storing `J` is usually infeasible, these methods exploit `torch.autograd` to compute the Jacobian-vector product `Jx` efficiently. Additionally they do not require storing the trajectory of the inner solver, thus providing a potentially large memory advantage over iterative differentiation.
+ Since computing and storing `J` is usually infeasible, these methods exploit `torch.autograd` to compute the Jacobian-vector product `Jx` efficiently. Additionally they do not require storing the trajectory of the inner solver, thus providing a potentially large memory advantage over iterative differentiation. These methods are not suited to optimize the parameters of the inner solver.
 
 Methods in this class are:
 - `fixed_point`: it approximately solves the linear system by repeatedly applying the map `T(x) = Jx + b`. NOTE: this method converges only when the fixed point map and consequently the map `T` are contractions.        
