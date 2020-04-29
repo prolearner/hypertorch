@@ -13,7 +13,6 @@ import time
 
 import torch.nn.functional as F
 
-seed = 0
 
 # Helper functions to deal with cuda
 cuda = True and torch.cuda.is_available()
@@ -27,11 +26,13 @@ torch.set_default_tensor_type(default_tensor_str)
 def frnp(x): return torch.from_numpy(x).cuda().float() if cuda else torch.from_numpy(x).float()
 def tonp(x, cuda=cuda): return x.detach().cpu().numpy() if cuda else x.detach().numpy()
 
+
+seed = 0
 torch.manual_seed(seed)
 np.random.seed(seed)
 
 
-# load and preprocess
+# load twentynews and preprocess
 val_size = 0.5
 X, y = fetch_20newsgroups_vectorized(subset='train', return_X_y=True,
                                      remove=('headers', 'footers', 'quotes'))
@@ -98,7 +99,7 @@ iterators = []
 for bs, x, y in [(train_batch_size, x_train, y_train), (val_batch_size, x_val, y_val)]:
     if bs < len(y):
         print('making iterator with batch size ', bs)
-        iterators.append(CustomTensorIterator([x, y], batch_size=train_batch_size, shuffle=True, **kwargs))
+        iterators.append(CustomTensorIterator([x, y], batch_size=bs, shuffle=True, **kwargs))
     else:
         iterators.append(repeat([x, y]))
 
@@ -106,18 +107,19 @@ train_iterator, val_iterator = iterators
 
 # HPO set up
 n_steps = 500
-outer_lr, outer_mu = 100.0, 0.0
-inner_lr, inner_mu = 100., 0.9
-T, K = 5, 10
+outer_lr, outer_mu = 100.0, 0.0  # nice with 100.0, 0.0 (torch.SGD) tested with T, K = 5, 10 and CG
+inner_lr, inner_mu = 100., 0.9   # nice with 100., 0.9 (HeavyBall) tested with T, K = 5, 10 and CG
+T, K = 10, 10
 tol = 1e-12
 warm_start = True
-bias = False  # without bias outer_lr can be bigger
+bias = False  # without bias outer_lr can be bigger (much faster convergence)
 
 train_log_interval = 100
 val_log_interval = 1
 
-reg_params = torch.zeros(101631).requires_grad_(True)
-#reg_params = torch.zeros(1).requires_grad_(True)
+reg_params = torch.zeros(101631).requires_grad_(True)  # one hp per feature
+# reg_params = torch.zeros(1).requires_grad_(True)  # one hp only
+
 ones_dxc = torch.ones(101631, 20)
 
 
@@ -176,7 +178,7 @@ def eval(params, x, y):
 
 
 if inner_mu > 0:
-    # inner_opt = hg.Momentum(train_loss, inner_lr, inner_mu, data_or_iter=train_iterator)
+    #inner_opt = hg.Momentum(train_loss, inner_lr, inner_mu, data_or_iter=train_iterator)
     inner_opt = hg.HeavyBall(train_loss, inner_lr, inner_mu, data_or_iter=train_iterator)
 else:
     inner_opt = hg.GradientDescent(train_loss, inner_lr, data_or_iter=train_iterator)
@@ -205,10 +207,10 @@ for o_step in range(n_steps):
     final_params = params_history[-1]
 
     outer_opt.zero_grad()
+    #hg.reverse(params_history[-K-1:], [reg_params], [inner_opt]*K, val_loss)
     #hg.fixed_point(final_params, [reg_params], K, inner_opt, val_loss, stochastic=False, tol=tol)
     hg.CG(final_params[:len(parameters)], [reg_params], K, inner_opt_cg, val_loss, stochastic=False, tol=tol)
     outer_opt.step()
-    #reg_params.data.clamp_(min=1e-8)
 
     for p, new_p in zip(parameters, final_params[:len(parameters)]):
         if warm_start:
@@ -255,7 +257,7 @@ else:
     inner_opt = hg.GradientDescent(train_loss, inner_lr, data_or_iter=train_val_iterator)
 
 
-T_final = 1000
+T_final = 2000
 w = torch.zeros(101631, 20).requires_grad_(True)
 parameters = [w]
 
