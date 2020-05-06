@@ -189,7 +189,10 @@ def cat_list_to_tensor(list_tx):
 
 def update_tensor_grads(hparams, grads):
     for l, g in zip(hparams, grads):
-        l.grad = g
+        if l.grad is None:
+            l.grad = torch.zeros_like(l)
+        if g is not None:
+            l.grad += g
 
 
 def grad_unused_zero(output, inputs, grad_outputs=None, retain_graph=False, create_graph=False):
