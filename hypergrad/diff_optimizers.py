@@ -9,6 +9,7 @@ class DifferentiableOptimizer:
             loss_f: callable with signature (params, hparams, [data optional]) -> loss tensor
             data_or_iter: (x, y) or iterator over the data needed for loss_f
         """
+        self.data_iterator = None
         if data_or_iter:
             self.data_iterator = data_or_iter if hasattr(data_or_iter, '__next__') else repeat(data_or_iter)
 

@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(
-    name='hyperTorch',
+    name='hypergrad',
     version='0.01',
     packages=['hypergrad'],
     author='Riccardo Grazzi',
