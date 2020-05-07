@@ -188,7 +188,7 @@ def inner_loop(hparams, params, optim, n_steps, log_interval, create_graph=False
 
 
 def evaluate(n_tasks, dataloader, meta_model, n_steps, get_inner_opt, reg_param, log_interval=None):
-    meta_model.inner_loop()
+    meta_model.train()
     device = next(meta_model.parameters()).device
 
     val_losses, val_accs = [], []
