@@ -1,6 +1,6 @@
 # hypergrad
 
-Lightweight flexible research-oriented package to compute approximate hypergradients in PyTorch.
+Lightweight flexible research-oriented package to compute approximate hypergradients in [PyTorch](https://github.com/pytorch/pytorch).
 
 ## What is an hypergradient?
 Given the following bi-level problem.
