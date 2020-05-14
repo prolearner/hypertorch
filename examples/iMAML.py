@@ -10,7 +10,7 @@ The code is quite simple and easy to read thanks to the following two libraries 
     Meta-learning with implicit gradients. In Advances in Neural Information Processing Systems (pp. 113-124).
     https://arxiv.org/abs/1909.04630
 """
-
+import math
 import argparse
 import time
 
@@ -65,32 +65,49 @@ class Task:
 
 
 def main():
+
     parser = argparse.ArgumentParser(description='Data HyperCleaner')
     parser.add_argument('--seed', type=int, default=0)
-    parser.add_argument('--dataset', type=str, default='miniimagenet', metavar='N', help='omniglot or miniimagenet')
+    parser.add_argument('--dataset', type=str, default='omniglot', metavar='N', help='omniglot or miniimagenet')
     parser.add_argument('--hg-mode', type=str, default='CG', metavar='N',
                         help='hypergradient approximation: CG or fixed_point')
     parser.add_argument('--no-cuda', action='store_true', default=False,
                         help='disables CUDA training')
 
     args = parser.parse_args()
-    print(args, '\n')
 
-    cuda = not args.no_cuda and torch.cuda.is_available()
-    device = torch.device("cuda" if cuda else "cpu")
-    kwargs = {'num_workers': 1, 'pin_memory': True} if cuda else {}
-
-    log_interval = 1
+    log_interval = 100
     eval_interval = 500
     inner_log_interval = None
     inner_log_interval_test = None
     ways = 5
     batch_size = 16
     n_tasks_test = 1000  # usually 1000 tasks are used for testing
-    T, K = 10, 5  # mini T=10, omni T=16
+    if args.dataset == 'omniglot':
+        reg_param = 2  # reg_param = 2
+        T, K = 16, 5  # T, K = 16, 5
+    elif args.dataset == 'miniimagenet':
+        reg_param = 0.5  # reg_param = 0.5
+        T, K = 10, 5  # T, K = 10, 5
+    else:
+        raise NotImplementedError(args.dataset, " not implemented!")
+
     T_test = T
     inner_lr = .1
-    reg_param = 0.5  # mini 0.5, omni 2.0
+
+    loc = locals()
+    del loc['parser']
+    del loc['args']
+
+    print(args, '\n', loc, '\n')
+
+    cuda = not args.no_cuda and torch.cuda.is_available()
+    device = torch.device("cuda" if cuda else "cpu")
+    kwargs = {'num_workers': 1, 'pin_memory': True} if cuda else {}
+
+    # the following are for reproducibility on GPU, see https://pytorch.org/docs/master/notes/randomness.html
+    # torch.backends.cudnn.deterministic = True
+    # torch.backends.cudnn.benchmark = False
 
     torch.random.manual_seed(args.seed)
     np.random.seed(args.seed)
@@ -221,7 +238,7 @@ def get_cnn_omniglot(hidden_size, n_classes):
                            )
         )
 
-    return nn.Sequential(
+    net =  nn.Sequential(
         conv_layer(1, hidden_size),
         conv_layer(hidden_size, hidden_size),
         conv_layer(hidden_size, hidden_size),
@@ -230,24 +247,51 @@ def get_cnn_omniglot(hidden_size, n_classes):
         nn.Linear(hidden_size, n_classes)
     )
 
+    initialize(net)
+    return net
+
 
 def get_cnn_miniimagenet(hidden_size, n_classes):
     def conv_layer(ic, oc):
         return nn.Sequential(
             nn.Conv2d(ic, oc, 3, padding=1), nn.ReLU(inplace=True), nn.MaxPool2d(2),
             nn.BatchNorm2d(oc, momentum=1., affine=True,
-                           track_running_stats=True # When this is true is called the "transductive setting"
+                           track_running_stats=False  # When this is true is called the "transductive setting"
                            )
         )
 
-    return nn.Sequential(
+    net = nn.Sequential(
         conv_layer(3, hidden_size),
         conv_layer(hidden_size, hidden_size),
         conv_layer(hidden_size, hidden_size),
         conv_layer(hidden_size, hidden_size),
         nn.Flatten(),
-        nn.Linear(hidden_size*5*5, n_classes)
+        nn.Linear(hidden_size*5*5, n_classes,)
     )
+
+    initialize(net)
+    return net
+
+
+def initialize(net):
+    # initialize weights properly
+    for m in net.modules():
+        if isinstance(m, nn.Conv2d):
+            n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
+            m.weight.data.normal_(0, math.sqrt(2. / n))
+            if m.bias is not None:
+                m.bias.data.zero_()
+        elif isinstance(m, nn.BatchNorm2d):
+            m.weight.data.fill_(1)
+            m.bias.data.zero_()
+        elif isinstance(m, nn.Linear):
+            #m.weight.data.normal_(0, 0.01)
+            #m.bias.data = torch.ones(m.bias.data.size())
+            m.weight.data.zero_()
+            m.bias.data.zero_()
+
+    return net
+
 
 
 if __name__ == '__main__':
