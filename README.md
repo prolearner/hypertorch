@@ -80,5 +80,12 @@ Methods in this class are:
 
 ## Cite
 
-COMING SOON
-
+If you use this code, plese cite [our paper](https://arxiv.org/abs/2006.16218)
+```
+@inproceedings{grazzi2020iteration,
+  title={On the Iteration Complexity of Hypergradient Computation},
+  author={Grazzi, Riccardo and Franceschi, Luca and Pontil, Massimiliano and Salzo, Saverio},
+  journal={Thirty-seventh International Conference on Machine Learning (ICML)},
+  year={2020}
+}
+```
