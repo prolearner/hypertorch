@@ -69,14 +69,14 @@ Methods in this class are:
 ### Approximate Implicit Differentiation methods:
 These methods approximate the hypergradient equation directly by:
  * Using an approximate solution to the inner problem instead of the true one.
- * Computing an approximate solution to the linear system `(I-J)x_star = b`, where `J` and  `b` are respectively the transpose of the jacobian of the fixed point map w.r.t. and the gradient of the outer objective both w.r.t the inner variable and computed on the approximate solution to the inner problem.
+ * Computing an approximate solution to the linear system `(I-J)x_star = b`, where `J` and  `b` are respectively the transpose of the jacobian of the fixed point map and the gradient of the outer objective both w.r.t the inner variable and computed on the approximate solution to the inner problem.
  
- Since computing and storing `J` is usually unfeasible, these methods exploit `torch.autograd` to compute the Jacobian-vector product `Jx` efficiently. Additionally they do not require storing the trajectory of the inner solver, thus providing a potentially large memory advantage over iterative differentiation. These methods are not suited to optimize the parameters of the inner solver.
+ Since computing and storing `J` is usually unfeasible, these methods exploit `torch.autograd` to compute the Jacobian-vector product `Jx` efficiently. Additionally, they do not require storing the trajectory of the inner solver, thus providing a potentially large memory advantage over iterative differentiation. These methods are not suited to optimize the parameters of the inner solver like the learning rate.
 
 Methods in this class are:
 - `fixed_point`: it approximately solves the linear system by repeatedly applying the map `T(x) = Jx + b`. NOTE: this method converges only when the fixed point map and consequently the map `T` are contractions.        
-- `CG`: it approximately solves the linear system with the conjugate gradient method. IMPORTANT N0TE: `J` must be symmetric for this to work!
-- `CG_normal_eq`: As above, but uses conjugate gradient on the normal equations (i.e. solves `J^TJx = J^Tb` instead) to deal with the non-symmetric case. NOTE: the  cost per iteration can be much higher than the other methods.
+- `CG`: it approximately solves the linear system with the conjugate gradient method. IMPORTANT N0TE: `I-J` must be symmetric and positive definite  for this to work!
+- `CG_normal_eq`: As above, but uses conjugate gradient on the normal equations (i.e. solves `J^TJx = J^Tb` instead) which works also when`I-J` is not symmetric and positive definite. NOTE: the  cost per iteration can be much higher than the other methods.
 
 ## Cite
 
