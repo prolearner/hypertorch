@@ -11,17 +11,16 @@ def reverse_unroll(params: List[Tensor],
                    outer_loss: Callable[[List[Tensor], List[Tensor]], Tensor],
                    set_grad=True) -> List[Tensor]:
     """
-    Compute the hypergradient by backpropagating through a previously employed inner solver procedure.
+    Computes the hypergradient by backpropagating through a previously employed inner solver procedure.
 
     Args:
-        params: the output of a torch differentiable inner solver (it must depends on hparams in the torch graph)
+        params: the output of a torch differentiable inner solver (it must depend on hparams in the torch graph)
         hparams: the outer variables (or hyperparameters), each element needs requires_grad=True
-        outer_loss: computes the outer objective taking just the parameters and hyperparameters as inputs
+        outer_loss: computes the outer objective taking parameters and hyperparameters as inputs
         set_grad: if True set t.grad to the hypergradient for every t in hparams
 
     Returns:
         the list of hypergradients for each element in hparams
-
     """
     o_loss = outer_loss(params, hparams)
     grads = torch.autograd.grad(o_loss, hparams, retain_graph=True)
@@ -39,15 +38,15 @@ def reverse(params_history: List[List[Tensor]],
     """
     Computes the hypergradient by recomputing and backpropagating through each inner update
     using the inner iterates and the update maps previously employed by the inner solver.
-    Similarly to checkpointing, this allows to save memory by increasing computation time.
+    Similarly to checkpointing, this allows to save memory w.r.t. reverse_unroll by increasing computation time.
     Truncated reverse can be performed by passing only part of the trajectory information, i.e. only the
-    last k inner iterates and updates as params_history and update_map_hystory respectively.
+    last k inner iterates and updates.
 
     Args:
         params_history: the inner iterates (from first to last)
         hparams: the outer variables (or hyperparameters), each element needs requires_grad=True
         update_map_history: updates used to solve the inner problem (from first to last)
-        outer_loss: computes the outer objective taking just the parameters and hyperparameters as inputs
+        outer_loss: computes the outer objective taking parameters and hyperparameters as inputs
         set_grad: if True set t.grad to the hypergradient for every t in hparams
 
     Returns:
@@ -90,10 +89,10 @@ def fixed_point(params: List[Tensor],
         hparams: the outer variables (or hyperparameters), each element needs requires_grad=True
         K: the maximum number of fixed point iterations
         fp_map: the fixed point map which defines the inner problem
-        outer_loss: computes the outer objective taking just the parameters and hyperparameters as inputs
+        outer_loss: computes the outer objective taking parameters and hyperparameters as inputs
         tol: end the method earlier when  the normed difference between two iterates is less than tol
         set_grad: if True set t.grad to the hypergradient for every t in hparams
-        stochastic: set to True when fp_map is not a deterministic function of its inputs
+        stochastic: set this to True when fp_map is not a deterministic function of its inputs
 
     Returns:
         the list of hypergradients for each element in hparams
@@ -143,17 +142,18 @@ def CG(params: List[Tensor],
        set_grad=True,
        stochastic=False) -> List[Tensor]:
     """
-     Computes the hypergradient by applying K steps of the conjugate gradient (CG) (it can end earlier when tol is reached).
+     Computes the hypergradient by applying K steps of the conjugate gradient method (CG).
+     It can end earlier when tol is reached.
 
      Args:
          params: the output of the inner solver procedure.
          hparams: the outer variables (or hyperparameters), each element needs requires_grad=True
          K: the maximum number of conjugate gradient iterations
          fp_map: the fixed point map which defines the inner problem
-         outer_loss: computes the outer objective taking just the parameters and hyperparameters as inputs
-         tol: end the method earlier when norm of the residual is less than tol
+         outer_loss: computes the outer objective taking parameters and hyperparameters as inputs
+         tol: end the method earlier when the norm of the residual is less than tol
          set_grad: if True set t.grad to the hypergradient for every t in hparams
-         stochastic: set to True when fp_map is not a deterministic function of its inputs
+         stochastic: set this to True when fp_map is not a deterministic function of its inputs
 
      Returns:
          the list of hypergradients for each element in hparams
