@@ -1,11 +1,28 @@
 import torch
 from torch.autograd import grad as torch_grad
+from torch import Tensor
 from hypergrad import CG_torch
-import traceback
+from typing import List, Callable
 
 
 # noinspection PyUnusedLocal
-def reverse_unroll(params, hparams, outer_loss, set_grad=True):
+def reverse_unroll(params: List[Tensor],
+                   hparams: List[Tensor],
+                   outer_loss: Callable[[List[Tensor], List[Tensor]], Tensor],
+                   set_grad=True) -> List[Tensor]:
+    """
+    Compute the hypergradient by backpropagating through a previously employed inner solver procedure.
+
+    Args:
+        params: the output of a torch differentiable inner solver (it must depends on hparams in the torch graph)
+        hparams: the outer variables (or hyperparameters), each element needs requires_grad=True
+        outer_loss: computes the outer objective taking just the parameters and hyperparameters as inputs
+        set_grad: if True set t.grad to the hypergradient for every t in hparams
+
+    Returns:
+        the list of hypergradients for each element in hparams
+
+    """
     o_loss = outer_loss(params, hparams)
     grads = torch.autograd.grad(o_loss, hparams, retain_graph=True)
     if set_grad:
@@ -14,7 +31,29 @@ def reverse_unroll(params, hparams, outer_loss, set_grad=True):
 
 
 # noinspection PyUnusedLocal
-def reverse(params_history, hparams, fp_map_history, outer_loss, tol=1e-10, set_grad=True):
+def reverse(params_history: List[List[Tensor]],
+            hparams: List[Tensor],
+            update_map_history: List[Callable[[List[Tensor], List[Tensor]], List[Tensor]]],
+            outer_loss: Callable[[List[Tensor], List[Tensor]], Tensor],
+            set_grad=True) -> List[Tensor]:
+    """
+    Computes the hypergradient by recomputing and backpropagating through each inner update
+    using the inner iterates and the update maps previously employed by the inner solver.
+    Similarly to checkpointing, this allows to save memory by increasing computation time.
+    Truncated reverse can be performed by passing only part of the trajectory information, i.e. only the
+    last k inner iterates and updates as params_history and update_map_hystory respectively.
+
+    Args:
+        params_history: the inner iterates (from first to last)
+        hparams: the outer variables (or hyperparameters), each element needs requires_grad=True
+        update_map_history: updates used to solve the inner problem (from first to last)
+        outer_loss: computes the outer objective taking just the parameters and hyperparameters as inputs
+        set_grad: if True set t.grad to the hypergradient for every t in hparams
+
+    Returns:
+         the list of hypergradients for each element in hparams
+
+    """
     params_history = [[w.detach().requires_grad_(True) for w in params] for params in params_history]
     o_loss = outer_loss(params_history[-1], hparams)
     grad_outer_w, grad_outer_hparams = get_outer_gradients(o_loss, params_history[-1], hparams)
@@ -23,7 +62,7 @@ def reverse(params_history, hparams, fp_map_history, outer_loss, tol=1e-10, set_
     grads = [torch.zeros_like(w) for w in hparams]
     K = len(params_history) - 1
     for k in range(-2, -(K + 2), -1):
-        w_mapped = fp_map_history[k + 1](params_history[k], hparams)
+        w_mapped = update_map_history[k + 1](params_history[k], hparams)
         bs = grad_unused_zero(w_mapped, hparams, grad_outputs=alphas, retain_graph=True)
         grads = [g + b for g, b in zip(grads, bs)]
         alphas = torch_grad(w_mapped, params_history[k], grad_outputs=alphas)
@@ -35,7 +74,31 @@ def reverse(params_history, hparams, fp_map_history, outer_loss, tol=1e-10, set_
     return grads
 
 
-def fixed_point(params, hparams, K, fp_map, outer_loss, tol=1e-10, set_grad=True, stochastic=False):
+def fixed_point(params: List[Tensor],
+                hparams: List[Tensor],
+                K: int ,
+                fp_map: Callable[[List[Tensor], List[Tensor]], List[Tensor]],
+                outer_loss: Callable[[List[Tensor], List[Tensor]], Tensor],
+                tol=1e-10,
+                set_grad=True,
+                stochastic=False) -> List[Tensor]:
+    """
+    Computes the hypergradient by applying K steps of the fixed point method (it can end earlier when tol is reached).
+
+    Args:
+        params: the output of the inner solver procedure.
+        hparams: the outer variables (or hyperparameters), each element needs requires_grad=True
+        K: the maximum number of fixed point iterations
+        fp_map: the fixed point map which defines the inner problem
+        outer_loss: computes the outer objective taking just the parameters and hyperparameters as inputs
+        tol: end the method earlier when  the normed difference between two iterates is less than tol
+        set_grad: if True set t.grad to the hypergradient for every t in hparams
+        stochastic: set to True when fp_map is not a deterministic function of its inputs
+
+    Returns:
+        the list of hypergradients for each element in hparams
+    """
+
     params = [w.detach().requires_grad_(True) for w in params]
     o_loss = outer_loss(params, hparams)
     grad_outer_w, grad_outer_hparams = get_outer_gradients(o_loss, params, hparams)
@@ -71,7 +134,30 @@ def fixed_point(params, hparams, K, fp_map, outer_loss, tol=1e-10, set_grad=True
     return grads
 
 
-def CG(params, hparams, K, fp_map, outer_loss, tol=1e-10, set_grad=True, stochastic=False):
+def CG(params: List[Tensor],
+       hparams: List[Tensor],
+       K: int ,
+       fp_map: Callable[[List[Tensor], List[Tensor]], List[Tensor]],
+       outer_loss: Callable[[List[Tensor], List[Tensor]], Tensor],
+       tol=1e-10,
+       set_grad=True,
+       stochastic=False) -> List[Tensor]:
+    """
+     Computes the hypergradient by applying K steps of the conjugate gradient (CG) (it can end earlier when tol is reached).
+
+     Args:
+         params: the output of the inner solver procedure.
+         hparams: the outer variables (or hyperparameters), each element needs requires_grad=True
+         K: the maximum number of conjugate gradient iterations
+         fp_map: the fixed point map which defines the inner problem
+         outer_loss: computes the outer objective taking just the parameters and hyperparameters as inputs
+         tol: end the method earlier when norm of the residual is less than tol
+         set_grad: if True set t.grad to the hypergradient for every t in hparams
+         stochastic: set to True when fp_map is not a deterministic function of its inputs
+
+     Returns:
+         the list of hypergradients for each element in hparams
+     """
     params = [w.detach().requires_grad_(True) for w in params]
     o_loss = outer_loss(params, hparams)
     grad_outer_w, grad_outer_hparams = get_outer_gradients(o_loss, params, hparams)
@@ -101,7 +187,14 @@ def CG(params, hparams, K, fp_map, outer_loss, tol=1e-10, set_grad=True, stochas
     return grads
 
 
-def CG_normaleq(params, hparams, K, fp_map, outer_loss, tol=1e-10, set_grad=True):
+def CG_normaleq(params: List[Tensor],
+                hparams: List[Tensor],
+                K: int ,
+                fp_map: Callable[[List[Tensor], List[Tensor]], List[Tensor]],
+                outer_loss: Callable[[List[Tensor], List[Tensor]], Tensor],
+                tol=1e-10,
+                set_grad=True) -> List[Tensor]:
+    """ Similar to CG but the conjugate gradient is applied on the normal equation (has a higher time complexity)"""
     params = [w.detach().requires_grad_(True) for w in params]
     o_loss = outer_loss(params, hparams)
     grad_outer_w, grad_outer_hparams = get_outer_gradients(o_loss, params, hparams)
@@ -129,7 +222,15 @@ def CG_normaleq(params, hparams, K, fp_map, outer_loss, tol=1e-10, set_grad=True
     return grads
 
 
-def neumann(params, hparams, K, fp_map, outer_loss, tol=1e-10, set_grad=True):
+def neumann(params: List[Tensor],
+            hparams: List[Tensor],
+            K: int ,
+            fp_map: Callable[[List[Tensor], List[Tensor]], List[Tensor]],
+            outer_loss: Callable[[List[Tensor], List[Tensor]], Tensor],
+            tol=1e-10,
+            set_grad=True) -> List[Tensor]:
+    """ Saves one iteration from the fixed point method"""
+
     # from https://arxiv.org/pdf/1803.06396.pdf,  should return the same gradient of fixed point K+1
     params = [w.detach().requires_grad_(True) for w in params]
     o_loss = outer_loss(params, hparams)
@@ -153,8 +254,15 @@ def neumann(params, hparams, K, fp_map, outer_loss, tol=1e-10, set_grad=True):
     return grads
 
 
-def exact(w_opt_f, hparams, outer_loss, set_grad=True):
-    grads = torch_grad(outer_loss(w_opt_f(hparams), hparams), hparams)
+def exact(opt_params_f: Callable[[List[Tensor]], List[Tensor]],
+          hparams: List[Tensor],
+          outer_loss: Callable[[List[Tensor], List[Tensor]], Tensor],
+          set_grad=True) -> List[Tensor]:
+    """
+    Computes the exact hypergradient using backpropagation and exploting the closed form torch differentiable function
+    that computes the optimal parameters given the hyperparameters (opt_params_f).
+    """
+    grads = torch_grad(outer_loss(opt_params_f(hparams), hparams), hparams)
     if set_grad:
         update_tensor_grads(hparams, grads)
     return grads
