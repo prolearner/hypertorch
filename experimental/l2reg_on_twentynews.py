@@ -200,10 +200,7 @@ for o_step in range(n_steps):
     start_time = time.time()
 
     inner_losses = []
-    if params_history:
-        params_history = [params_history[-1]]
-    else:
-        params_history = [inner_opt.get_opt_params(parameters)]
+    params_history = [parameters]
     for t in range(T):
         params_history.append(inner_opt(params_history[-1], hparams, create_graph=False))
         inner_losses.append(inner_opt.curr_loss)
