@@ -37,8 +37,7 @@ MORE EXAMPLES COMING SOON
 Hypergadients are useful to perform
 - gradient-based hyperparamter optimization
 - meta-learning
-- training models that use an internal state (RNNs, GNNs, Deep Equilibrium Networks, ...) 
-- the experiments of your next paper
+- training models that use an internal state (some types of RNNs and GNNs, Deep Equilibrium Networks, ...) 
 
 ## Install
 Requires python 3 and PyTorch version >= 1.4.
