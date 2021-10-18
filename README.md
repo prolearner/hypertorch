@@ -81,7 +81,7 @@ Methods in this class are:
 
 ## Cite
 
-If you use this code, plese cite [our paper](https://arxiv.org/abs/2006.16218)
+If you use this code, please cite [our paper](https://arxiv.org/abs/2006.16218)
 ```
 @inproceedings{grazzi2020iteration,
   title={On the Iteration Complexity of Hypergradient Computation},
