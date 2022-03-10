@@ -7,7 +7,7 @@ Given the following bi-level problem.
 
 ![bilevel](./resources/bilevel.svg)
 
-We call **hypegradient** the following quantity.
+We call **hypergradient** the following quantity.
 
 ![hypergradient](./resources/hypergradient.svg)
 
