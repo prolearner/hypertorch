@@ -78,7 +78,7 @@ Methods in this class are:
 - `fixed_point`: it approximately solves the linear system by repeatedly applying the map `T(x) = Jx + b`. NOTE: this method converges only when the fixed point map and consequently the map `T` are contractions.        
 - `CG`: it approximately solves the linear system with the conjugate gradient method. IMPORTANT N0TE: `I-J` must be symmetric and positive definite  for this to work!
 - `CG_normal_eq`: As above, but uses conjugate gradient on the normal equations (i.e. solves `J^TJx = J^Tb` instead) which works also when`I-J` is not symmetric and positive definite. NOTE: the  cost per iteration can be much higher than the other methods.
-
+- `stoch_AID`: General method that can use any `torch.optim.Optimizer` to solve the linear system. See Algorithm 1 in [Grazzi et al. 2022](https://arxiv.org/abs/2202.03397) for more details. 
 ## Cite
 
 If you use this code, please cite [our paper](https://arxiv.org/abs/2006.16218)
