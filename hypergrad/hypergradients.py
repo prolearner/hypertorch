@@ -275,7 +275,7 @@ def stoch_AID(
     K: int,
     J_inner: int = 1,
     J_outer: int = 1,
-    fp_map: Union[Callable[[List[Tensor], List[Tensor]], Tensor], None] = None,
+    fp_map: Union[Callable[[List[Tensor], List[Tensor]], List[Tensor]], None] = None,
     inner_loss: Union[Callable[[List[Tensor], List[Tensor]], Tensor], None] = None,
     linsys_start: Union[List[Tensor], None] = None,
     stoch_outer: bool = False,
