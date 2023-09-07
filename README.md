@@ -21,7 +21,7 @@ is called the `outer objective` (e.g. the validation loss).
 ## Quickstart
 
 #### hyperparameter optimization
-See this [notebbook](https://github.com/prolearner/hypertorch/blob/master/examples/logistic_regression.ipynb), where we show how to compute the hypergradient to optimize the regularization parameters of a simple logistic regression model.
+See this [notebook](https://github.com/prolearner/hypertorch/blob/master/examples/logistic_regression.ipynb), where we show how to compute the hypergradient to optimize the regularization parameters of a simple logistic regression model.
 
 #### meta-learning
 [`examples/iMAML.py`](https://github.com/prolearner/hypertorch/blob/master/examples/iMAML.py) shows an implementation of the method described in the paper [Meta-learning with implicit gradients](https://arxiv.org/abs/1909.04630). The code uses [higher](https://github.com/facebookresearch/higher) to get stateless version of torch nn.Module-s and [torchmeta](https://github.com/tristandeleu/pytorch-meta) for meta-dataset loading and minibatching.
