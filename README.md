@@ -27,7 +27,7 @@ See this [notebook](https://github.com/prolearner/hypertorch/blob/master/example
 [`examples/iMAML.py`](https://github.com/prolearner/hypertorch/blob/master/examples/iMAML.py) shows an implementation of the method described in the paper [Meta-learning with implicit gradients](https://arxiv.org/abs/1909.04630). The code uses [higher](https://github.com/facebookresearch/higher) to get stateless version of torch nn.Module-s and [torchmeta](https://github.com/tristandeleu/pytorch-meta) for meta-dataset loading and minibatching.
 
 #### [equilibrium-models](https://arxiv.org/abs/1909.01377) 
-This [notebbook](https://github.com/prolearner/hypertorch/blob/eqm_example/examples/Equilibrium%20models%20(RNN-style%20model%20on%20MNIST).ipynb) shows how to train a simple equilibrium network with "RNN-style" dynamics.
+This [notebook](https://github.com/prolearner/hypertorch/blob/eqm_example/examples/Equilibrium%20models%20(RNN-style%20model%20on%20MNIST).ipynb) shows how to train a simple equilibrium network with "RNN-style" dynamics.
 
 
 MORE EXAMPLES COMING SOON
