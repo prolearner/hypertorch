@@ -1,6 +1,7 @@
 import torch
 from torch.autograd import grad as torch_grad
 from torch import Tensor
+from torch.optim import Optimizer
 from hypergrad import CG_torch
 from typing import Union, Tuple, List, Callable, Any
 
