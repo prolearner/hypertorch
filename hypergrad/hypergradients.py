@@ -179,8 +179,8 @@ def CG(params: List[Tensor],
     if stochastic:
         w_mapped = fp_map(params, hparams)
 
-    grads = torch_grad(w_mapped, hparams, grad_outputs=vs)
-    grads = [g + v for g, v in zip(grads, grad_outer_hparams)]
+    grads = torch_grad(w_mapped, hparams, grad_outputs=vs, allow_unused=True)
+    grads = [g + v if g is not None else v for g, v in zip(grads, grad_outer_hparams)]
 
     if set_grad:
         update_tensor_grads(hparams, grads)
