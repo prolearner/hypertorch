@@ -43,9 +43,9 @@ Hypergadients are useful to perform
 Requires python 3 and PyTorch version >= 1.4.
 
 ```
-git clone git@github.com:prolearner/hypergrad.git
-cd hypergrad
-pip install .
+git clone git@github.com:prolearner/hypertorch.git
+cd hypertorch
+pip install -e .
 ```
 `python setup.py install` would also work.
 
